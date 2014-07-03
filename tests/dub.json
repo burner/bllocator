@@ -1,0 +1,14 @@
+{
+		"name": "test",
+		"description": "allotest",
+		"authors": ["Robert Burner Schadek"],
+		"homepage": "github.com/burner/ua",
+		"license": "LGPL-3.0",
+		"dependencies": {
+		},
+		"sourceFiles" : ["test.d"],
+		"importPaths" : ["../source/"],
+		"buildOptions" : ["unittests"],
+		"targetType": "executable",
+		"lflags" : ["../libstd_allocator.a"]
+}
