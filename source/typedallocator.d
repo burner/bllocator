@@ -3,39 +3,40 @@ module typedallocator;
 import std.traits;
 import std.range;
 
-struct RC(T) if(!is(T == class) && !hasIndirections!T) {
+struct RC(T,A) if(!is(T == class)) {
 	private struct Impl {
 		T payload;
 		long count;
-		void delegate(void[]) delFunc;
+		A* allocator;
 	}
 
 	private Impl* store;
 
-	private void initialize(A...)(void[] delegate(size_t) allo, 
-			void delegate(void[]) del, auto ref A args)
+	private void initialize(bool empla, A, U...)(A* a, auto ref U args)
 	{
 		import std.conv : emplace;
 		import std.exception : enforce;
 
-		this.store = cast(Impl*) enforce(allo(Impl.sizeof).ptr);
-		emplace(&this.store.payload, args);
-		this.store.delFunc = del;
+		this.store = enforce(a.make!(Impl));
+
+		static if(empla) {
+			emplace(&this.store.payload, args);
+		}
+
+		this.store.allocator = a;
 		this.store.count = 1;
 	}
 
-	this(A...)(void[] delegate(size_t) allo, void delegate(void[]) del, 
-			auto ref A args) //if(A.length > 0)
+	this(A, U...)(A* a, auto ref U args) if(!isArray!T)
 	{
-		this.initialize(allo, del, args);
+		this.initialize!true(a, args);
 	}
 
-	this(A...)(void[] delegate(size_t) shared allo, 
-			void delegate(void[]) shared del, 
-			auto ref A args) //if(A.length > 0)
+	this(A)(A* a, T t) if(isArray!T)
 	{
-		this.initialize(cast(void[] delegate(size_t))allo, 
-			cast(void delegate(void[]))del, args);
+		this.initialize!false(a);
+
+		this.store.payload = t;
 	}
 
     this(this) {
@@ -46,12 +47,18 @@ struct RC(T) if(!is(T == class) && !hasIndirections!T) {
     ~this() {
         if(this.store is null) return;
         assert(this.store.count > 0);
-        if (--this.store.count)
+        if(--this.store.count) {
             return;
+		}
         // Done, deallocate
-        .destroy(this.store.payload);
-		auto del = this.store.delFunc;
-		del((cast(void*)this.store)[0 .. Impl.sizeof]);
+		static if(!isArray!T) {
+        	.destroy(this.store.payload);
+		} else {
+			this.store.allocator.release(this.store.payload);
+		}
+		//pragma(msg, typeof(this.store.allocator));
+		auto del = this.store.allocator;
+		del.release(this.store);
 
         this.store = null;
     }
@@ -64,34 +71,38 @@ struct RC(T) if(!is(T == class) && !hasIndirections!T) {
 	alias getPayload this;
 }
 
-struct TypedAllo {
+auto makeTypedAllo(T)(ref T t) {
+	return TypedAllo!T(t);
+}
+
+struct TypedAllo(A) {
   private:
-	void[] delegate(size_t) allocator;
-	void delegate(void[]) deallocator;
+	A* allo;
 
   public:
-	this(A)(A allo) {
-		this(&allo.allocate, &allo.deallocate);
-	}
-	this(A,D)(A allo, D deallo) {
-		this.allocator = cast(void[] delegate(size_t))allo;
-		this.deallocator = cast(void delegate(void[]))deallo;
+	this(A)(ref A allo) {
+		this.allo = &allo;
 	}
 
 	auto make(T,A...)(auto ref A args) if(!is(T == class)) {
 		import std.conv : emplace;
 		import std.exception : enforce;
 
-		auto tPtr = cast(T*)enforce(this.allocator(T.sizeof).ptr);
+		auto tPtr = cast(T*)enforce(this.allo.allocate(T.sizeof).ptr);
 		emplace(tPtr, args);
 
 		return tPtr;
 	}
 
-	auto makeRC(T,A...)(auto ref A args) if(!is(T == class)) {
-		return RC!(T)(this.allocator, this.deallocator, 
-			args
-		);
+	auto makeRC(T,U...)(auto ref U args) if(!is(T == class)) {
+		alias AT = typeof(this);
+		return RC!(T,AT)(&this, args);
+	}
+
+	auto makeArrRC(T,L...)(L sizes) {
+		auto aPtr = this.makeArr!T(sizes);
+		alias AT = typeof(this);
+		return RC!(T,AT)(&this, aPtr);
 	}
 
 	auto makeArr(T,L...)(L sizes) if(!is(T == class) && 
@@ -115,7 +126,7 @@ struct TypedAllo {
 	
 	    alias typeof(T.init[0]) E;
 	
-	    auto ptr = cast(E*)this.allocator(sizes[0] * E.sizeof);
+	    auto ptr = cast(E*)this.allo.allocate(sizes[0] * E.sizeof).ptr;
 	    auto ret = ptr[0..sizes[0]];
 	
 	    static if(sizes.length > 1) {
@@ -129,8 +140,25 @@ struct TypedAllo {
 	    return ret;
 	}
 
-	void release(T)(T* ptr) {
+	void release(T)(T ptr) if(isPointer!T) {
 		void[] vPtr = (cast(void*)ptr)[0 .. T.sizeof];
-		this.deallocator(vPtr);
+		this.allo.deallocate(vPtr);
+	}
+
+	void release(T)(T arr) if(isArray!T) {
+	    alias typeof(T.init[0]) E;
+
+		static if(isArray!E) {
+			foreach(it; arr) {
+				this.release(it);
+			}
+		}
+
+		foreach(ref it; arr) {
+			.destroy(it);
+		}
+
+		void[] vPtr = (cast(void*)arr.ptr)[0 .. (E.sizeof * arr.length)];
+		this.allo.deallocate(vPtr);
 	}
 }

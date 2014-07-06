@@ -6,15 +6,7 @@ import typedallocator;
 
 unittest {
 	auto allo = Mallocator.it;
-
-	auto ptr = RC!(int)(&allo.allocate, &allo.deallocate, 10);
-
-	assert(ptr == 10);
-}
-
-unittest {
-	auto allo = Mallocator.it;
-	auto a = TypedAllo(&allo.allocate, &allo.deallocate);
+	auto a = makeTypedAllo(allo);
 
 	auto someInt = a.makeRC!int(42);
 	assert(someInt == 42);
@@ -36,7 +28,7 @@ unittest {
 
 unittest {
 	auto allo = Mallocator.it;
-	auto a = TypedAllo(&allo);
+	auto a = makeTypedAllo(allo);
 
 	auto someInt = a.makeRC!int(42);
 	assert(someInt == 42);
@@ -50,23 +42,27 @@ unittest {
 	assert(arr !is null);
 	assert(arr.length == 42);
 	foreach(it; arr) assert(it == 0);
+	a.release(arr);
 
 	int[][][] arr2 = a.makeArr!(int[][][])(42,32,22);
 	assert(arr2 !is null);
 	assert(arr2.length == 42);
+	a.release(arr2);
 }
 
-
-unittest {
+version(unittest) {
 	struct F {
-		~this() { writeln("F is ending"); }
+		int v;
+		~this() { writefln("F %d is ending", this.v); }
 	}
+}
 
-	void fun(RC!F r) {
+unittest {
+	void fun(T)(T t) {
 	}
 
 	auto allo = Mallocator.it;
-	auto a = TypedAllo(&allo.allocate, &allo.deallocate);
+	auto a = makeTypedAllo(allo);
 
 	auto f = a.makeRC!F();
 	fun(f);
@@ -79,6 +75,26 @@ unittest {
 	assert(arr.length == 32);
 
 	allo.deallocate((cast(void*)arr.ptr)[0 .. int.sizeof * 32]);
+}
+
+unittest {
+	auto allo = Mallocator.it;
+	auto a = makeTypedAllo(allo);
+
+	auto arrRC = a.makeArrRC!(F[])(32);
+	assert(arrRC.length == 32);
+}
+
+unittest {
+	auto allo = Mallocator.it;
+	auto a = makeTypedAllo(allo);
+
+	auto arrRC = a.makeArrRC!(F[])(32);
+	F[] arr = arrRC;
+	foreach(idx, ref it; arr) {
+		it.v = cast(int)idx;
+	}
+	assert(arr.length == 32);
 }
 
 void main() {
