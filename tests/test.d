@@ -2,7 +2,8 @@ import std.stdio;
 import std.array;
 import std.allocator;
 
-import typedallocator;
+import sweet.typedallocator;
+import sweet.vector;
 
 unittest {
 	auto allo = Mallocator.it;
@@ -21,14 +22,18 @@ unittest {
 	assert(arr.length == 42);
 	foreach(it; arr) assert(it == 0);
 
+	a.release(arr);
+
 	int[][][] arr2 = a.makeArr!(int[][][])(42,32,22);
 	assert(arr2 !is null);
 	assert(arr2.length == 42);
+
+	a.release(arr2);
 }
 
 unittest {
 	auto allo = Mallocator.it;
-	auto a = makeTypedAllo(allo);
+	TypedAllo!(shared Mallocator) a = makeTypedAllo(allo);
 
 	auto someInt = a.makeRC!int(42);
 	assert(someInt == 42);
@@ -53,7 +58,7 @@ unittest {
 version(unittest) {
 	struct F {
 		int v;
-		~this() { writefln("F %d is ending", this.v); }
+		~this() { /*writefln("F %d is ending", this.v);*/ }
 	}
 }
 
@@ -95,6 +100,28 @@ unittest {
 		it.v = cast(int)idx;
 	}
 	assert(arr.length == 32);
+}
+
+unittest {
+	Vector!int v;
+
+    alias FList = Freelist!(GCAllocator, 0, unbounded);
+    alias A = Segregator!(
+        8, Freelist!(GCAllocator, 0, 8),
+        128, Bucketizer!(FList, 1, 128, 16),
+        256, Bucketizer!(FList, 129, 256, 32),
+        512, Bucketizer!(FList, 257, 512, 64),
+        1024, Bucketizer!(FList, 513, 1024, 128),
+        2048, Bucketizer!(FList, 1025, 2048, 256),
+        3584, Bucketizer!(FList, 2049, 3584, 512),
+        4072 * 1024, CascadingAllocator!(
+            () => HeapBlock!(4096)(GCAllocator.it.allocate(4072 * 1024))),
+        GCAllocator
+    );
+    A tuMalloc;
+	auto a = makeTypedAllo(tuMalloc);
+
+	auto v2 = Vector!(int, TypedAllo!A)(&a);
 }
 
 void main() {

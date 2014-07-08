@@ -1,6 +1,9 @@
-module typedallocator;
+module sweet.typedallocator;
+
+public import std.allocator;
 
 import std.traits;
+import std.typetuple;
 import std.range;
 
 struct RC(T,A) if(!is(T == class)) {

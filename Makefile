@@ -1,4 +1,9 @@
 all:
-	dub; \
+	dub ; \
 	cd tests; \
-	dub;
+	dub ;
+
+gdc:
+	dub --compiler=gdc; \
+	cd tests; \
+	dub --compiler=gdc;
