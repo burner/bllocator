@@ -122,6 +122,8 @@ unittest {
 	auto a = makeTypedAllo(tuMalloc);
 
 	auto v2 = Vector!(int, TypedAllo!A)(&a);
+	v2.insertBack(1);
+	assert(v2[0] == 1);
 }
 
 void main() {

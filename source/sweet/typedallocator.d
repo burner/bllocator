@@ -148,7 +148,7 @@ struct TypedAllo(A) {
 		this.allo.deallocate(vPtr);
 	}
 
-	void release(T)(T arr) if(isArray!T) {
+	void release(bool destroy = true, T)(T arr) if(isArray!T) {
 	    alias typeof(T.init[0]) E;
 
 		static if(isArray!E) {
