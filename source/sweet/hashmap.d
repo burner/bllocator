@@ -3,7 +3,6 @@ module sweet.hashmap;
 import std.stdio;
 import std.traits : isSomeString;
 
-
 hash_t toHash(S)(S str) if(isSomeString!S) {
     hash_t hash; 
 	immutable len = str.length;
@@ -41,7 +40,7 @@ struct HMEntry(K,V) {
 	Pair!(K,V)*[16] array;
 	size_t length;
 
-	bool insert(T)(K key, V value, T* allo) {
+	bool insert(T)(K key, V value, ref T allo) {
 		throwIfKeyContainted(key);
 
 		auto p = allo.make!(Pair!(K,V))(key,value);
@@ -49,8 +48,8 @@ struct HMEntry(K,V) {
 		return this.length == 16;
 	}
 
-	void release(T)(T* allo) {
-		foreach(it; this.array[0 .. this.length]) {
+	void release(T)(ref T allo) {
+		foreach(Pair!(K,V)* it; this.array[0 .. this.length]) {
 			allo.release(it);
 		}
 	}
@@ -162,9 +161,9 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 			return;
 		}
 
-		foreach(it; this.impl.array) {
+		foreach(HMEntry!(K,V)* it; this.impl.array) {
 			if(it !is null) {
-				it.release(&this.allocator);
+				it.release(this.allocator);
 			}
 		}
 
@@ -184,7 +183,7 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 		auto entry = getEntry(impl.array, key);
 		scope(success) ++this.impl.length;
 
-		if(entry.insert(key, value, &this.allocator) 
+		if(entry.insert(key, value, this.allocator) 
 				|| (impl.length+1) >= to!size_t(impl.array.length * 0.8)) 
 		{
 			this.rebuild();
@@ -193,9 +192,7 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 	private HashMapImpl* getOrCreateHashMapImpl() {
 		if(this.impl is null) {
-			//this.impl = cast(HashMapImpl*)GC.malloc(HashMapImpl.sizeof);
 			this.impl = this.allocator.make!(HashMapImpl)();
-			//this.impl.emplace();
 			this.impl.refCnt = 1;
 		}
 		return this.impl;

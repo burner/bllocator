@@ -128,7 +128,25 @@ unittest {
 }
 
 unittest {
-	auto m = HashMap!(int,int)();
+    alias FList = Freelist!(GCAllocator, 0, unbounded);
+    alias A = Segregator!(
+        8, Freelist!(GCAllocator, 0, 8),
+        128, Bucketizer!(FList, 1, 128, 16),
+        256, Bucketizer!(FList, 129, 256, 32),
+        512, Bucketizer!(FList, 257, 512, 64),
+        1024, Bucketizer!(FList, 513, 1024, 128),
+        2048, Bucketizer!(FList, 1025, 2048, 256),
+        3584, Bucketizer!(FList, 2049, 3584, 512),
+        4072 * 1024, CascadingAllocator!(
+            () => HeapBlock!(GCAllocator,4096)(4072 * 1024)),
+        GCAllocator
+    );
+    A tuMalloc;
+	auto a = makeTypedAllo(tuMalloc);
+
+	auto m = HashMap!(int,int,TypedAllo!A)(&a);
+	m.insert(1337, 128);
+	assert(m[1337] == 128);
 }
 
 void main() {
