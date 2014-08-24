@@ -4,6 +4,7 @@ import std.allocator;
 
 import sweet.typedallocator;
 import sweet.vector;
+import sweet.hashmap;
 
 unittest {
 	auto allo = Mallocator.it;
@@ -115,7 +116,7 @@ unittest {
         2048, Bucketizer!(FList, 1025, 2048, 256),
         3584, Bucketizer!(FList, 2049, 3584, 512),
         4072 * 1024, CascadingAllocator!(
-            () => HeapBlock!(4096)(GCAllocator.it.allocate(4072 * 1024))),
+            () => HeapBlock!(GCAllocator,4096)(4072 * 1024)),
         GCAllocator
     );
     A tuMalloc;
@@ -124,6 +125,10 @@ unittest {
 	auto v2 = Vector!(int, TypedAllo!A)(&a);
 	v2.insertBack(1);
 	assert(v2[0] == 1);
+}
+
+unittest {
+	auto m = HashMap!(int,int)();
 }
 
 void main() {

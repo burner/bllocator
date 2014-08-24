@@ -8,7 +8,7 @@
 		},
 		"sourceFiles" : ["test.d"],
 		"importPaths" : ["../source/"],
-		"buildOptions" : ["unittests"],
+		"buildOptions" : ["unittests", "coverage"],
 		"targetType": "executable",
-		"lflags" : ["../libstd_allocator.a"]
+		"lflags" : ["../libsweet.a"]
 }

@@ -74,16 +74,21 @@ struct RC(T,A) if(!is(T == class)) {
 	alias getPayload this;
 }
 
-auto makeTypedAllo(T)(ref T t) {
-	return TypedAllo!T(t);
+auto makeTypedAllo(T)(auto ref T t) {
+	TypedAllo!T ret;
+	ret.allo = &t;
+	return ret;
 }
 
 struct TypedAllo(A) {
-  private:
+  //private:
 	A* allo;
 
-  public:
 	this(A)(ref A allo) {
+		this.allo = &allo;
+	}
+
+	this(A)(ref shared(A) allo) {
 		this.allo = &allo;
 	}
 

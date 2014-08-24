@@ -10,8 +10,14 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 	}	
 
 	private T[] arr;
-	private static size_t initSize = 16;
-	public size_t length = 0;
+
+	private VectorImpl* data;
+
+	struct VectorImpl {
+		T[] arr;
+		size_t refCnt;
+		size_t length;
+	}
 
 	static if(Mallo) {
 		A allocator;
@@ -19,21 +25,17 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		A* allocator;
 	}	
 
-	private void makeImpl() {
-		static bool once = false;
-		static if(Mallo) {
-			if(!once) {
-				this.allocator = makeTypedAllo(Mallocator.it);
-				once = true;
-			}
-		}
-	}
-
 	static if(!Mallo) {
 		@disable this();
 
 		this(A* allo) {
 			this.allocator = allo;
+		}
+	} else {
+		static Vector!(T) opCall() {
+			Vector!(T) ret;
+			ret.allocator = makeTypedAllo(Mallocator.it());
+			return ret;
 		}
 	}
 
@@ -43,17 +45,15 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		}
 	}
 
-	private void buildCap(const size_t toInsert) {
-		this.makeImpl();
-
-		if(this.arr.length == 0) {
-			this.arr = this.allocator.makeArr!(T[])(Vector.initSize);
-		} else if(this.length + toInsert >= this.arr.length) {
-			auto nArr = this.allocator.makeArr!(T[])(this.arr.length * 2);
-			nArr[0 .. this.arr.length] = this.arr[];
-			this.allocator.release!(false)(this.arr);
-			this.arr = nArr;
+	private VectorImpl* getData(size_t size = 32) {
+		if(this.data is null) {
+			this.data = this.allocator.make!(VectorImpl)();
+			this.data.refCnt = 0;
+			this.data.length = 0;
+			this.data.arr = this.allocator.makeArr!(T[])(size);
 		}
+
+		return this.data;
 	}
 
 	public void insertBack(S...)(auto ref S s) {
@@ -62,14 +62,29 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		}
 	}
 
+	private void grow() {
+		auto impl = this.getData();
+		auto nArr = this.allocator.makeArr!(T[])(impl.arr.length * 2);
+		for(size_t i = 0; i < impl.arr.length; ++i) {
+			nArr[i] = impl.arr[i];
+		}
+
+		auto oArr = impl.arr;
+		impl.arr = nArr;
+		this.allocator.release!(false)(oArr);
+	}
+
 	private void insertBackImpl(S)(auto ref S s) {
 		static if(is(S : T)) {
-			this.buildCap(1);
-			this.arr[this.length++] = s;
+			auto impl = this.getData();
+			if(impl.length == impl.arr.length) {
+				this.grow();
+			}
+			impl.arr[impl.length++] = s;
 		}	
 	}
 
 	public ref T opIndex(size_t idx) {
-		return this.arr[idx];
+		return this.data.arr[idx];
 	}
 }

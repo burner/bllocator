@@ -1,7 +1,7 @@
 all:
-	dub ; \
+	dub --force; \
 	cd tests; \
-	dub ;
+	dub --force;
 
 gdc:
 	dub --compiler=gdc; \
