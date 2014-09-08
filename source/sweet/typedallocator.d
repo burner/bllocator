@@ -153,17 +153,19 @@ struct TypedAllo(A) {
 		this.allo.deallocate(vPtr);
 	}
 
-	void release(bool destroy = true, T)(T arr) if(isArray!T) {
+	void release(bool des = true, T)(T arr) if(isArray!T) {
 	    alias typeof(T.init[0]) E;
 
-		static if(isArray!E) {
-			foreach(it; arr) {
-				this.release(it);
+		static if(des) {
+			static if(isArray!E) {
+				foreach(it; arr) {
+					this.release!des(it);
+				}
 			}
-		}
 
-		foreach(ref it; arr) {
-			.destroy(it);
+			foreach(ref it; arr) {
+				.destroy(it);
+			}
 		}
 
 		void[] vPtr = (cast(void*)arr.ptr)[0 .. (E.sizeof * arr.length)];

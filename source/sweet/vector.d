@@ -42,6 +42,7 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 			this.clean();
 			this.allocator.release!false(this.data.arr);
 			this.allocator.release(this.data);
+			this.data = null;
 		}
 	}
 
@@ -60,6 +61,28 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		foreach(it; s) {
 			this.insertBackImpl(it);
 		}
+	}
+
+	private void insertBackImpl(S)(auto ref S s) {
+		static if(is(S : T)) {
+			auto impl = this.checkSpace();
+			impl.arr[impl.length++] = s;
+		}	
+	}
+
+	void emplaceBack(S...)(auto ref S s) {
+		import std.conv : emplace;
+		auto impl = this.checkSpace();
+		emplace!T(&impl.arr[impl.length++], s);
+	}
+
+	private VectorImpl* checkSpace() {
+		auto impl = this.getData();
+		if(impl.length == impl.arr.length) {
+			this.grow();
+		}
+		
+		return impl;
 	}
 
 	void clean() {
@@ -84,16 +107,6 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		this.allocator.release!(false)(oArr);
 	}
 
-	private void insertBackImpl(S)(auto ref S s) {
-		static if(is(S : T)) {
-			auto impl = this.getData();
-			if(impl.length == impl.arr.length) {
-				this.grow();
-			}
-			impl.arr[impl.length++] = s;
-		}	
-	}
-
 	ref T opIndex(size_t idx) {
 		return this.data.arr[idx];
 	}
@@ -104,6 +117,14 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 
 	ref T back() {
 		return this.data.arr[this.data.length-1u];
+	}
+
+	@property size_t length() const {
+		if(this.data !is null) {
+			return this.data.length - 1;
+		} else {
+			return 0u;
+		}
 	}
 }
 
@@ -152,8 +173,24 @@ unittest {
 	auto v = Vector!Fancy();
 	foreach(it; 0 .. 10) {
 		v.insertBack(Fancy(f));
+		assert(v.length == it, to!string(v.length));
 	}
 
-	//v.__dtor();
-	//assert(i == 11, to!string(i));
+	v.__dtor();
+	assert(i == 31, to!string(i));
+}
+
+unittest {
+	import std.conv : to;
+	int i = 0;
+	auto f = () { i++;};
+
+	auto v = Vector!Fancy();
+	foreach(it; 0 .. 10) {
+		v.emplaceBack(f);
+		assert(v.length == it, to!string(v.length));
+	}
+
+	v.__dtor();
+	assert(i == 10, to!string(i));
 }
