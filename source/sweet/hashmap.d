@@ -114,7 +114,10 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 		A* allocator;
 	}	
 
-	alias HMArray = Array!(HMEntry!(K,V)*);
+	import sweet.vector : Vector;
+
+	//alias HMArray = Array!(HMEntry!(K,V)*);
+	alias HMArray = Vector!(HMEntry!(K,V)*, A);
 
 	struct HashMapImpl {
 		HMArray array;
@@ -193,6 +196,12 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 	private HashMapImpl* getOrCreateHashMapImpl() {
 		if(this.impl is null) {
 			this.impl = this.allocator.make!(HashMapImpl)();
+
+			static if(Mallo) {
+				this.impl.array = HMArray();
+			} else {
+				this.impl.array = HMArray(this.allocator);
+			}
 			this.impl.refCnt = 1;
 		}
 		return this.impl;
@@ -225,10 +234,14 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 	void rebuild() {
 		auto impl = this.getOrCreateHashMapImpl();
-		HMArray newArray;
+		static if(Mallo) {
+			auto newArray = HMArray();
+		} else {
+			auto newArray = HMArray(this.allocator);
+		}
 		newArray.insertDummy(null, impl.array.length * 2);
 
-		foreach(ref it; impl.array) {
+		foreach(ref it; impl.array[]) {
 			if(it !is null) {
 				while(!it.empty) {
 					auto back = it.removeBack();

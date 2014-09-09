@@ -46,6 +46,8 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		}
 	}
 
+	alias opSlice this;
+
 	private VectorImpl* getData(size_t size = 32) {
 		if(this.data is null) {
 			this.data = this.allocator.make!(VectorImpl)();
@@ -133,6 +135,16 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		return this.data.arr[this.data.length-1u];
 	}
 
+	T[] opSlice() {
+		auto impl = this.getData();
+		return this.opSlice(0, impl.length);
+	}
+
+	T[] opSlice(size_t low, size_t high) {
+		auto impl = this.getData();
+		return impl.arr[low .. high];
+	}
+
 	@property size_t length() const {
 		if(this.data !is null) {
 			return this.data.length;
@@ -151,6 +163,9 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 }
 
 unittest {
+	import std.conv : to;
+	import std.string : format;
+
 	Vector!int fun() {
 		return Vector!int();
 	}
@@ -165,6 +180,30 @@ unittest {
 		foreach(jt; 0 .. it) {
 			assert(v[jt] == jt);
 			assert(v2[jt] == jt);
+		}
+
+		auto s = v[0 .. it+1];
+		auto s2 = v2[0 .. it+1];
+		assert(s.length == it+1);
+		assert(s2.length == it+1);
+		foreach(idx, jt; s) {
+			assert(idx == jt);
+		}
+
+		foreach(idx, jt; s2) {
+			assert(idx == jt);
+		}
+
+		auto s3 = v[];
+		auto s4 = v2[];
+		assert(s3.length == s.length, format("%u %u", s3.length, s.length));
+		assert(s4.length == s2.length, format("%u %u", s4.length, s2.length));
+		foreach(idx, jt; s3) {
+			assert(idx == jt);
+		}
+
+		foreach(idx, jt; s4) {
+			assert(idx == jt);
 		}
 	}
 }
