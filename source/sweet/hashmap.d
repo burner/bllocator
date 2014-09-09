@@ -208,6 +208,7 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 	}
 
 	static HMEntry!(K,V)* getEntry(ref HMArray arr, ref K key) {
+		assert(arr.length != 0);
 		hash_t hash = key.toHash() % arr.length;
 
 		auto entry = arr[hash];
@@ -222,6 +223,7 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 	ref V opIndex(K key) {
 		auto impl = this.getOrCreateHashMapImpl();
+		assert(impl.array.length != 0);
 		auto hash = key.toHash() % impl.array.length;
 		HMEntry!(K,V)* entry = impl.array[hash];
 		if(entry !is null) {
