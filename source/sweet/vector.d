@@ -76,6 +76,21 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		emplace!T(&impl.arr[impl.length++], s);
 	}
 
+	import std.traits : hasElaborateDestructor, isPointer;
+
+	void removeBack() {
+		import std.exception : enforceEx;
+		import core.exception : RangeError;
+
+		auto impl = this.getData();
+		cast(void)enforceEx!RangeError(impl.length, 
+			"Can remove the back of an empty Vector");
+		--impl.length;
+		static if(!isPointer!T && hasElaborateDestructor!T) {
+			impl.arr[impl.length].__dtor();
+		}
+	}
+
 	private VectorImpl* checkSpace() {
 		auto impl = this.getData();
 		if(impl.length == impl.arr.length) {
@@ -86,7 +101,6 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 	}
 
 	void clean() {
-		import std.traits : hasElaborateDestructor, isPointer;
 		static if(hasElaborateDestructor!T) {
 			foreach(ref it; this.data.arr[0 .. this.data.length]) {
 				.destroy(it);
@@ -121,9 +135,17 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 
 	@property size_t length() const {
 		if(this.data !is null) {
-			return this.data.length - 1;
+			return this.data.length;
 		} else {
 			return 0u;
+		}
+	}
+
+	@property bool empty() const {
+		if(this.data !is null) {
+			return this.data.length == 0;
+		} else {
+			return true;
 		}
 	}
 }
@@ -173,7 +195,7 @@ unittest {
 	auto v = Vector!Fancy();
 	foreach(it; 0 .. 10) {
 		v.insertBack(Fancy(f));
-		assert(v.length == it, to!string(v.length));
+		assert(v.length == it+1, to!string(v.length));
 	}
 
 	v.__dtor();
@@ -188,9 +210,30 @@ unittest {
 	auto v = Vector!Fancy();
 	foreach(it; 0 .. 10) {
 		v.emplaceBack(f);
-		assert(v.length == it, to!string(v.length));
+		assert(v.length == it+1, to!string(v.length));
 	}
 
 	v.__dtor();
+	assert(i == 10, to!string(i));
+}
+
+unittest {
+	import std.conv : to;
+	int i = 0;
+	auto f = () { i++;};
+
+	auto v = Vector!Fancy();
+	foreach(it; 0 .. 10) {
+		v.emplaceBack(f);
+		assert(v.length == it+1, to!string(v.length));
+	}
+
+	while(!v.empty) {
+		v.removeBack();
+	}
+
+	assert(v.empty);
+	assert(v.length == 0u, to!string(v.length));
+
 	assert(i == 10, to!string(i));
 }
