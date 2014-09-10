@@ -37,13 +37,26 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 		}
 	}
 
-	~this() {
+	this(this) {
 		if(this.data !is null) {
-			this.clean();
-			this.allocator.release!false(this.data.arr);
-			this.allocator.release(this.data);
-			this.data = null;
+			++this.data.refCnt; 
 		}
+	}
+
+	~this() {
+		if(this.data is null) {
+			return;
+		}
+
+		if(this.data.refCnt > 1) {
+			--this.data.refCnt;
+			return;
+		}
+
+		this.clean();
+		this.allocator.release!false(this.data.arr);
+		this.allocator.release(this.data);
+		this.data = null;
 	}
 
 	alias opSlice this;
@@ -51,7 +64,7 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 	private VectorImpl* getData(size_t size = 32) {
 		if(this.data is null) {
 			this.data = this.allocator.make!(VectorImpl)();
-			this.data.refCnt = 0;
+			this.data.refCnt = 1;
 			this.data.length = 0;
 			this.data.arr = this.allocator.makeArr!(T[])(size);
 		}
@@ -154,9 +167,11 @@ struct Vector(T,A = TypedAllo!(shared Mallocator)) {
 	}
 
 	@property bool empty() const {
+		import std.stdio;
 		if(this.data !is null) {
 			return this.data.length == 0;
 		} else {
+			writeln(__LINE__);
 			return true;
 		}
 	}

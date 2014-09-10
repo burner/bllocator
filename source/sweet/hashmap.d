@@ -183,7 +183,7 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 	void insert(K key, V value) {
 		auto impl = this.getOrCreateHashMapImpl();
-		auto entry = getEntry(impl.array, key);
+		auto entry = getEntry(impl.array, key, this.allocator);
 		scope(success) ++this.impl.length;
 
 		if(entry.insert(key, value, this.allocator) 
@@ -207,14 +207,15 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 		return this.impl;
 	}
 
-	static HMEntry!(K,V)* getEntry(ref HMArray arr, ref K key) {
+	static HMEntry!(K,V)* getEntry(A)(ref HMArray arr, ref K key, ref A a) {
 		assert(arr.length != 0);
 		hash_t hash = key.toHash() % arr.length;
 
 		auto entry = arr[hash];
 		if(entry is null) {
-			arr[hash] = entry = cast(HMEntry!(K,V)*)
-				GC.malloc(HMEntry!(K,V)().sizeof);
+			//arr[hash] = entry = cast(HMEntry!(K,V)*)
+			//	GC.malloc(HMEntry!(K,V)().sizeof);
+			arr[hash] = entry = a.make!(HMEntry!(K,V))();
 			entry.emplace();
 		}
 
@@ -241,26 +242,29 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 		} else {
 			auto newArray = HMArray(this.allocator);
 		}
+
 		newArray.insertDummy(null, impl.array.length * 2);
+		assert(newArray.length != 0);
 
 		foreach(ref it; impl.array[]) {
 			if(it !is null) {
 				while(!it.empty) {
 					auto back = it.removeBack();
-					auto entry = getEntry(newArray, back.key);
+					auto entry = getEntry(newArray, back.key, this.allocator);
 					entry.emplaceBack(back);
 				}
 			}
 		}
 
-		freeArray(impl.array);
+		freeArray(impl.array, this.allocator);
 		impl.array = newArray;
+		assert(impl.array.length != 0);
 	}
 
-	private static void freeArray(ref HMArray arr) {
-		foreach(it; arr[]) {
+	private static void freeArray(A)(ref HMArray arr, ref A a) {
+		foreach(it; arr) {
 			if(it !is null) {
-				GC.free(it);
+				a.release(it);
 			}
 		}
 	}
