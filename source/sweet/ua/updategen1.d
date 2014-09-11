@@ -1,6 +1,6 @@
-module ua.updategen1;
+module sweet.ua.updategen1;
 
-import ua.uda;
+import sweet.ua.uda;
 
 string genUpdate1(T,P)() @trusted if(isUA!T) {
 	import std.range : take;

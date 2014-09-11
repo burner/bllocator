@@ -1,4 +1,4 @@
-module ua.uda;
+module sweet.ua.uda;
 
 import std.conv;
 import std.traits;
@@ -6,8 +6,8 @@ import std.string;
 import std.array;
 import std.traits;
 
-import ua.options;
-import ua.types;
+import sweet.ua.options;
+import sweet.ua.types;
 
 private pure void buildUARecursive(Args...)(ref UA ua, Args args) {
 	static if(args.length > 0) {

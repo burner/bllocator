@@ -1,4 +1,4 @@
-module ua.mysqlcbinding;
+module sweet.ua.mysqlcbinding;
 
 /* Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
 
@@ -638,7 +638,7 @@ uint list_length(LIST*);
 int list_walk(LIST*, int action, ubyte* argument);
 
 LIST* list_rest(LIST* a) { return a.next; }
-LIST* list_push(LIST* a, void* b) { return list_cons(b, a); }
+//LIST* list_push(LIST* a, void* b) { return list_cons(b, a); } TODO(won't link)
 void my_free(void *ptr);
 void list_pop(LIST* A) { LIST* old=A; A=list_delete(old, old); my_free(old); }
 // end my_list.h stuff

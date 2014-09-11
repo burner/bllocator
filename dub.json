@@ -15,4 +15,6 @@
 		"targetType": "library",
 	},
 	],
+
+	"lflags" : ["-lmysqlclient", "-lpthread", "-lz", "-lm", "-lssl", "-lcrypto", "-ldl"]
 }

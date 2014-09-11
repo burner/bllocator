@@ -1,4 +1,4 @@
-module ua.types;
+module sweet.ua.types;
 
 import std.datetime : Date, DateTime;
 

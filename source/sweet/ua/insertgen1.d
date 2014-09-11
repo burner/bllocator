@@ -1,6 +1,6 @@
-module ua.insertgen1;
+module sweet.ua.insertgen1;
 
-import ua.uda;
+import sweet.ua.uda;
 
 string genInsert1(T,P)() nothrow @trusted if(isUA!T) {
 	import std.algorithm : filter, joiner, iota, map;

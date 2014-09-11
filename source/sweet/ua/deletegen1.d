@@ -1,6 +1,6 @@
-module ua.deletegen1;
+module sweet.ua.deletegen1;
 
-import ua.uda;
+import sweet.ua.uda;
 
 string genDelete(T,P)() @trusted if(isUA!T) {
 	import std.conv : to;

@@ -1,4 +1,4 @@
-module ua.options;
+module sweet.ua.options;
 
 enum : ulong {
 	PrimaryKey = 1,
