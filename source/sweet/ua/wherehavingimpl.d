@@ -79,7 +79,7 @@ string getHavingWhereFunctions(string a, string A)() pure @safe nothrow {
 	return ret;
 }
 
-pragma(msg, getHavingWhereFunctions!("where", "Where"));
+//pragma(msg, getHavingWhereFunctions!("where", "Where"));
 
 //pragma(msg, getWhereFunctions());
 //mixin(getHavingWhereFunctions!());

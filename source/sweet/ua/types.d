@@ -62,3 +62,30 @@ unittest {
 	assert(mysqlType!(DateTime)() == "DATETIME");
 	assert(mysqlType!(Date)() == "DATE");
 }
+
+string sqliteType(T)() pure @safe {
+	import std.traits : isStaticArray, isSomeChar;
+	import std.range : ElementType;
+	import std.string : format;
+
+	static if(is(T == byte)) return "INTEGER";
+	else static if(is(T == ubyte)) return "INTEGER";
+	else static if(is(T == bool)) return "INTEGER";
+	else static if(is(T == short)) return "INTEGER";
+	else static if(is(T == ushort)) return "INTEGER";
+	else static if(is(T == int)) return "INTEGER";
+	else static if(is(T == uint)) return "INTEGER";
+	else static if(is(T == long)) return "INTEGER";
+	else static if(is(T == ulong)) return "INTEGER";
+	else static if(is(T == float)) return "REAL";
+	else static if(is(T == double)) return "REAL";
+	else static if(is(T == char)) return "INTEGER";
+	else static if(is(T == string)) return "TEXT";
+	else static if(is(T == wstring)) return "TEXT";
+	else static if(is(T == dstring)) return "TEXT";
+	else static if(isStaticArray!T && isSomeChar!(ElementType!T) 
+		&& T.length < 255) return format("TEXT", T.length);
+	else static if(is(T == Date)) return "NUMERIC";
+	else static if(is(T == DateTime)) return "NUMERIC";
+	else assert(false, "sqlite has not type for \"" ~ getNameOf!T() ~ '"');
+}
