@@ -56,7 +56,7 @@ pure string uaToTable(alias TypeGen,T)(UA ua) {
 }
 
 // sqlite
-string getCreateTable2(T, alias TypeGen)() if(isUA!T) {
+string genCreateTable2(T, alias TypeGen)() if(isUA!T) {
 	import std.array : empty;
 
 	string[string] namesInUse;
@@ -107,16 +107,21 @@ string getCreateTable2(T, alias TypeGen)() if(isUA!T) {
 
 version(unittest) {
 	import sweet.ua.options;
-	private @UA struct Foo {
-		@UA string a;
-		@UA int b;
-		@UA(PrimaryKey, "k1") int c;
-		@UA(PrimaryKey, "k2") int d;
-	}
+}
+
+private @UA struct FooHH {
+	@UA string a;
+	@UA int b;
+	@UA(PrimaryKey, "k1") int c;
+	@UA(PrimaryKey, "k2") int d;
+}
+
+private struct BarHH {
+	int a;
 }
 
 unittest {
 	import sweet.ua.types;
-	enum i = getCreateTable2!(Foo,sqliteType)();
-	pragma(msg, i);
+	enum i = genCreateTable2!(FooHH,sqliteType)();
+	enum j = genCreateTable1!(FooHH,mysqlType)();
 }

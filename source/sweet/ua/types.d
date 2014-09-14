@@ -21,7 +21,7 @@ string getNameOf(T)() pure @safe nothrow {
 }
 
 version(unittest) {
-	struct Foo {
+	private struct Foo {
 	}
 }
 
