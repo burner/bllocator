@@ -5,12 +5,27 @@ import sweet.ua.options;
 
 struct Sqlite {
 	import sweet.ua.sqlitebindings;
+	import etc.c.sqlite3;
   private:
-	string filename;
+	string dbFilename;
+	sqlite3* db;
+	sqlite3_stmt* stmt;
 
   public:
-	this(string filename) {
-		this.filename = filename;
+	this(string filename, 
+			int openType = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE) 
+	{
+		import std.string : toStringz;
+
+		this.dbFilename = filename;
+
+		int errCode = sqlite3_open_v2(toStringz(this.dbFilename), &this.db, 
+			openType, null
+		);
+
+		if(errCode != SQLITE_OK) {
+			sqliteThrowException(errCode);
+		}
 	}
 
 	struct UniRange(T) {
@@ -59,12 +74,37 @@ struct Sqlite {
 		mixin(genRangeItemFill!T());
 	}
 
-	void insertImpl(Args...)(sqlite3* db, sqlite3_stmt* stmt, auto ref Args args) {
-		immutable string insertString = genInsert1!(T,sqliteType);
-		assert(insertString[$-1] == '\0');
-		int errCode = sqlite3_prepare_v2(db, insertStr.ptr, &stmt, null);
+	void insertImpl(Args...)(sqlite3* db, sqlite3_stmt* stmt, 
+			auto ref Args args) 
+	{
+		enum insertString = genInsert1!(T,sqliteType);
+		static assert(insertString[$-1] == '\0');
+		int errCode = sqlite3_prepare_v2(db, insertStr.ptr,
+				createString.length, &stmt, null);
 		
 		if(errCode != SQLITE_OK) {
+			scope(exit) sqlite3_finalize(stmt);
+			sqliteThrowException(errCode);
+		}
+	}
+
+	void createTable(T)() {
+		import sweet.ua.tablegen1 : genCreateTable2;
+		import sweet.ua.types : sqliteType;
+
+		enum createString = genCreateTable2!(T,sqliteType);
+		static assert(createString[$-1] == '\0');
+
+		int errCode = sqlite3_prepare_v2(db, createString.ptr,
+				createString.length, &stmt, null);
+		
+		if(errCode != SQLITE_OK) {
+			scope(exit) sqlite3_finalize(stmt);
+			sqliteThrowException(errCode);
+		}
+
+		errCode = sqlite3_step(stmt);
+		if(errCode != SQLITE_DONE) {
 			scope(exit) sqlite3_finalize(stmt);
 			sqliteThrowException(errCode);
 		}
@@ -115,7 +155,7 @@ private string genRangeItemFill(T)() {
 	return ret;
 }
 
-unittest {
+version(unittest) {
 	@UA struct FooHH {
 		@UA string a;
 		@UA int b;
@@ -123,5 +163,17 @@ unittest {
 		@UA(PrimaryKey, "k2") int d;
 	}
 
-	pragma(msg, genRangeItemFill!(FooHH));
+	//pragma(msg, genRangeItemFill!(FooHH));
+}
+
+unittest {
+	string dbname = "__testdatabase.db";
+	scope(exit) {
+		if(exists(dbname)) {
+			remove(dbname);
+		}
+	}
+
+	auto db = Sqlite(dbname);
+	db.createTable!FooHH();
 }

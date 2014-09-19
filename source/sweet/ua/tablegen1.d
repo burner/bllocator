@@ -43,7 +43,7 @@ string genCreateTable1(T, alias TypeGen)() if(isUA!T) {
 		}
 		ret ~= ")";
 	}
-	ret ~= ");";
+	ret ~= ");\0";
 
 	return ret;
 }
@@ -100,7 +100,7 @@ string genCreateTable2(T, alias TypeGen)() if(isUA!T) {
 		}
 		ret ~= ")";
 	}
-	ret ~= ");";
+	ret ~= ");\0";
 
 	return ret;
 }

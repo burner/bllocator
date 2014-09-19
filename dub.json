@@ -16,5 +16,5 @@
 	},
 	],
 
-	"lflags" : ["-lmysqlclient", "-lpthread", "-lz", "-lm", "-lssl", "-lcrypto", "-ldl"]
+	"lflags" : ["-lmysqlclient", "-lsqlite3", "-lpthread", "-lz", "-lm", "-lssl", "-lcrypto", "-ldl"]
 }
