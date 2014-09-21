@@ -128,110 +128,192 @@ class Sqlite_Notice_Recover_Wal : SqliteException { mixin(SqliteExceptionConstru
 class Sqlite_Notice_Recover_Rollback: SqliteException { mixin(SqliteExceptionConstructor); }
 class Sqlite_Warning_Autoindex : SqliteException { mixin(SqliteExceptionConstructor); }
 
-void sqliteThrowException(int errCode, string msg = "", int line = __LINE__, 
-		string file = __FILE__) 
+void sqliteThrowException(sqlite3* db, int errCode, string msg = "", 
+		int line = __LINE__, string file = __FILE__) 
 {
 	import std.conv : to;
+	import std.string : fromStringz;
+	string errString = fromStringz(sqlite3_errmsg(db));
 	switch(errCode) {
-		case SQLITE_ERROR: throw new Sqlite_Error(msg, file, line);
-		case SQLITE_INTERNAL: throw new Sqlite_Internal(msg, file, line);
-		case SQLITE_PERM: throw new Sqlite_Perm(msg, file, line);
-		case SQLITE_ABORT: throw new Sqlite_Abort(msg, file, line);
-		case SQLITE_BUSY: throw new Sqlite_Busy(msg, file, line);
-		case SQLITE_LOCKED: throw new Sqlite_Locked(msg, file, line);
-		case SQLITE_NOMEM: throw new Sqlite_Nomem(msg, file, line);
-		case SQLITE_READONLY: throw new Sqlite_Readonly(msg, file, line);
-		case SQLITE_INTERRUPT: throw new Sqlite_Interrupt(msg, file, line);
-		case SQLITE_IOERR: throw new Sqlite_Ioerr(msg, file, line);
-		case SQLITE_CORRUPT: throw new Sqlite_Corrupt(msg, file, line);
-		case SQLITE_NOTFOUND: throw new Sqlite_Notfound(msg, file, line);
-		case SQLITE_FULL: throw new Sqlite_Full(msg, file, line);
-		case SQLITE_CANTOPEN: throw new Sqlite_Cantopen(msg, file, line);
-		case SQLITE_PROTOCOL: throw new Sqlite_Protocol(msg, file, line);
-		case SQLITE_EMPTY: throw new Sqlite_Empty(msg, file, line);
-		case SQLITE_SCHEMA: throw new Sqlite_Schema(msg, file, line);
-		case SQLITE_TOOBIG: throw new Sqlite_Toobig(msg, file, line);
-		case SQLITE_CONSTRAINT: throw new Sqlite_Constraint(msg, file, line);
-		case SQLITE_MISMATCH: throw new Sqlite_Mismatch(msg, file, line);
-		case SQLITE_MISUSE: throw new Sqlite_Misuse(msg, file, line);
-		case SQLITE_NOLFS: throw new Sqlite_Nolfs(msg, file, line);
-		case SQLITE_AUTH: throw new Sqlite_Auth(msg, file, line);
-		case SQLITE_FORMAT: throw new Sqlite_Format(msg, file, line);
-		case SQLITE_RANGE: throw new Sqlite_Range(msg, file, line);
-		case SQLITE_NOTADB: throw new Sqlite_Notadb(msg, file, line);
-		case SQLITE_NOTICE: throw new Sqlite_Notice(msg, file, line);
-		case SQLITE_IOERR_READ: throw new Sqlite_IOErr_Read(msg, file, line);
-		case SQLITE_IOERR_SHORT_READ: throw new Sqlite_IOErr_Short_Read(msg, file, line);
-		case SQLITE_IOERR_WRITE: throw new Sqlite_IOErr_Write(msg, file, line);
-		case SQLITE_IOERR_FSYNC: throw new Sqlite_IOErr_Fsync(msg, file, line);
-		case SQLITE_IOERR_DIR_FSYNC: throw new Sqlite_IOErr_Dir_Fsync(msg, file, line);
-		case SQLITE_IOERR_TRUNCATE: throw new Sqlite_IOErr_Truncate(msg, file, line);
-		case SQLITE_IOERR_FSTAT: throw new Sqlite_IOErr_Fstat(msg, file, line);
-		case SQLITE_IOERR_UNLOCK: throw new Sqlite_IOErr_Unlock(msg, file, line);
-		case SQLITE_IOERR_RDLOCK: throw new Sqlite_IOErr_Rdlock(msg, file, line);
-		case SQLITE_IOERR_DELETE: throw new Sqlite_IOErr_Delete(msg, file, line);
-		case SQLITE_IOERR_BLOCKED: throw new Sqlite_IOErr_Blocked(msg, file, line);
-		case SQLITE_IOERR_NOMEM: throw new Sqlite_IOErr_Nomem(msg, file, line);
-		case SQLITE_IOERR_ACCESS: throw new Sqlite_IOErr_Access(msg, file, line);
+		case SQLITE_ERROR: throw new Sqlite_Error(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_INTERNAL: throw new Sqlite_Internal(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_PERM: throw new Sqlite_Perm(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_ABORT: throw new Sqlite_Abort(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_BUSY: throw new Sqlite_Busy(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_LOCKED: throw new Sqlite_Locked(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_NOMEM: throw new Sqlite_Nomem(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_READONLY: throw new Sqlite_Readonly(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_INTERRUPT: throw new Sqlite_Interrupt(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_IOERR: throw new Sqlite_Ioerr(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CORRUPT: throw new Sqlite_Corrupt(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_NOTFOUND: throw new Sqlite_Notfound(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_FULL: throw new Sqlite_Full(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CANTOPEN: throw new Sqlite_Cantopen(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_PROTOCOL: throw new Sqlite_Protocol(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_EMPTY: throw new Sqlite_Empty(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_SCHEMA: throw new Sqlite_Schema(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_TOOBIG: throw new Sqlite_Toobig(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CONSTRAINT: throw new Sqlite_Constraint(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_MISMATCH: throw new Sqlite_Mismatch(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_MISUSE: throw new Sqlite_Misuse(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_NOLFS: throw new Sqlite_Nolfs(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_AUTH: throw new Sqlite_Auth(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_FORMAT: throw new Sqlite_Format(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_RANGE: throw new Sqlite_Range(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_NOTADB: throw new Sqlite_Notadb(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_NOTICE: throw new Sqlite_Notice(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_IOERR_READ: throw new Sqlite_IOErr_Read(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SHORT_READ: throw new Sqlite_IOErr_Short_Read(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_WRITE: throw new Sqlite_IOErr_Write(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_FSYNC: throw new Sqlite_IOErr_Fsync(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_DIR_FSYNC: throw new Sqlite_IOErr_Dir_Fsync(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_TRUNCATE: throw new Sqlite_IOErr_Truncate(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_FSTAT: throw new Sqlite_IOErr_Fstat(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_UNLOCK: throw new Sqlite_IOErr_Unlock(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_RDLOCK: throw new Sqlite_IOErr_Rdlock(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_DELETE: throw new Sqlite_IOErr_Delete(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_BLOCKED: throw new Sqlite_IOErr_Blocked(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_NOMEM: throw new Sqlite_IOErr_Nomem(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_ACCESS: throw new Sqlite_IOErr_Access(
+				msg ~ ":" ~ errString, file, line);
 		case SQLITE_IOERR_CHECKRESERVEDLOCK: 
-			throw new Sqlite_IOErr_Checkreservedlock(msg, file, line);
-		case SQLITE_IOERR_LOCK: throw new Sqlite_IOErr_Lock(msg, file, line);
-		case SQLITE_IOERR_CLOSE: throw new Sqlite_IOErr_Close(msg, file, line);
-		case SQLITE_IOERR_DIR_CLOSE: throw new Sqlite_IOErr_Dir_Close(msg, file, line);
-		case SQLITE_IOERR_SHMOPEN: throw new Sqlite_IOErr_Shmopen(msg, file, line);
-		case SQLITE_IOERR_SHMSIZE: throw new Sqlite_IOErr_Shmsize(msg, file, line);
-		case SQLITE_IOERR_SHMLOCK: throw new Sqlite_IOErr_Shmlock(msg, file, line);
-		case SQLITE_IOERR_SHMMAP: throw new Sqlite_IOErr_Shmmap(msg, file, line);
-		case SQLITE_IOERR_SEEK: throw new Sqlite_IOErr_Seek(msg, file, line);
+			throw new Sqlite_IOErr_Checkreservedlock(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_IOERR_LOCK: throw new Sqlite_IOErr_Lock(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_CLOSE: throw new Sqlite_IOErr_Close(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_DIR_CLOSE: throw new Sqlite_IOErr_Dir_Close(
+					msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SHMOPEN: throw new Sqlite_IOErr_Shmopen(
+						msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SHMSIZE: throw new Sqlite_IOErr_Shmsize(
+						msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SHMLOCK: throw new Sqlite_IOErr_Shmlock(
+						msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SHMMAP: throw new Sqlite_IOErr_Shmmap(
+					msg ~ ":" ~ errString, file, line);
+		case SQLITE_IOERR_SEEK: throw new Sqlite_IOErr_Seek(
+			msg ~ ":" ~ errString, file, line);
 		case SQLITE_IOERR_DELETE_NOENT: 
-			throw new Sqlite_IOErr_Delete_Noent(msg, file, line);
-		case SQLITE_IOERR_MMAP: throw new Sqlite_IOErr_Mmap(msg, file, line);
+			throw new Sqlite_IOErr_Delete_Noent(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_IOERR_MMAP: throw new Sqlite_IOErr_Mmap(
+			msg ~ ":" ~ errString, file, line);
 		case SQLITE_IOERR_GETTEMPPATH: 
-			throw new Sqlite_IOErr_Gettemppath(msg, file, line);
-		case SQLITE_IOERR_CONVPATH: throw new Sqlite_IOErr_Convpath(msg, file, line);
+			throw new Sqlite_IOErr_Gettemppath(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_IOERR_CONVPATH: throw new Sqlite_IOErr_Convpath(
+				msg ~ ":" ~ errString, file, line);
 		case SQLITE_LOCKED_SHAREDCACHE: 
-			throw new Sqlite_Locked_Sharedcache(msg, file, line);
-		case SQLITE_BUSY_RECOVERY: throw new Sqlite_Busy_Recovery(msg, file, line);
-		case SQLITE_BUSY_SNAPSHOT: throw new Sqlite_Busy_Snapshot(msg, file, line);
+			throw new Sqlite_Locked_Sharedcache(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_BUSY_RECOVERY: throw new Sqlite_Busy_Recovery(
+						msg ~ ":" ~ errString, file, line);
+		case SQLITE_BUSY_SNAPSHOT: throw new Sqlite_Busy_Snapshot(
+						msg ~ ":" ~ errString, file, line);
 		case SQLITE_CANTOPEN_NOTEMPDIR: 
-			throw new Sqlite_CantOpen_NoTempDir(msg, file, line);
-		case SQLITE_CANTOPEN_ISDIR: throw new Sqlite_CantOpen_IsDir(msg, file, line);
+			throw new Sqlite_CantOpen_NoTempDir(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CANTOPEN_ISDIR: throw new Sqlite_CantOpen_IsDir(
+				msg ~ ":" ~ errString, file, line);
 		case SQLITE_CANTOPEN_FULLPATH: 
-			throw new Sqlite_CantOpen_FullPath(msg, file, line);
+			throw new Sqlite_CantOpen_FullPath(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CANTOPEN_CONVPATH: 
-			throw new Sqlite_CantOpen_ConvPath(msg, file, line);
-		case SQLITE_CORRUPT_VTAB: throw new Sqlite_Corrupt_Vtab(msg, file, line);
+			throw new Sqlite_CantOpen_ConvPath(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CORRUPT_VTAB: throw new Sqlite_Corrupt_Vtab(
+					msg ~ ":" ~ errString, file, line);
 		case SQLITE_READONLY_RECOVERY: 
-			throw new Sqlite_Readonly_Recovery(msg, file, line);
+			throw new Sqlite_Readonly_Recovery(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_READONLY_CANTLOCK: 
-			throw new Sqlite_Readonly_Cantlock(msg, file, line);
+			throw new Sqlite_Readonly_Cantlock(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_READONLY_ROLLBACK: 
-			throw new Sqlite_Readonly_Rollback(msg, file, line);
-		case SQLITE_READONLY_DBMOVED: throw new Sqlite_Readonly_DBmoved(msg, file, line);
-		case SQLITE_ABORT_ROLLBACK: throw new Sqlite_Abort_Rollback(msg, file, line);
-		case SQLITE_CONSTRAINT_CHECK: throw new Sqlite_Constraint_Check(msg, file, line);
+			throw new Sqlite_Readonly_Rollback(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_READONLY_DBMOVED: throw new Sqlite_Readonly_DBmoved(
+						msg ~ ":" ~ errString, file, line);
+		case SQLITE_ABORT_ROLLBACK: throw new Sqlite_Abort_Rollback(
+				msg ~ ":" ~ errString, file, line);
+		case SQLITE_CONSTRAINT_CHECK: throw new Sqlite_Constraint_Check(
+						msg ~ ":" ~ errString, file, line);
 		case SQLITE_CONSTRAINT_COMMITHOOK: 
-			throw new Sqlite_Constraint_Commithook(msg, file, line);
+			throw new Sqlite_Constraint_Commithook(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_FOREIGNKEY: 
-			throw new Sqlite_Constraint_Foreignkey(msg, file, line);
+			throw new Sqlite_Constraint_Foreignkey(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_FUNCTION: 
-			throw new Sqlite_Constraint_Function(msg, file, line);
+			throw new Sqlite_Constraint_Function(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_NOTNULL: 
-			throw new Sqlite_Constraint_Notnull(msg, file, line);
+			throw new Sqlite_Constraint_Notnull(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_PRIMARYKEY: 
-			throw new Sqlite_Constraint_Primarykey(msg, file, line);
+			throw new Sqlite_Constraint_Primarykey(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_TRIGGER: 
-			throw new Sqlite_Constraint_Trigger(msg, file, line);
+			throw new Sqlite_Constraint_Trigger(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_CONSTRAINT_UNIQUE: 
-			throw new Sqlite_Constraint_Unique(msg, file, line);
-		case SQLITE_CONSTRAINT_VTAB: throw new Sqlite_Constraint_Vtab(msg, file, line);
-		case SQLITE_CONSTRAINT_ROWID: throw new Sqlite_Constraint_Rowid(msg, file, line);
+			throw new Sqlite_Constraint_Unique(msg ~ ":" ~ errString,
+			 file, line);
+		case SQLITE_CONSTRAINT_VTAB: throw new Sqlite_Constraint_Vtab(
+					msg ~ ":" ~ errString, file, line);
+		case SQLITE_CONSTRAINT_ROWID: throw new Sqlite_Constraint_Rowid(
+						msg ~ ":" ~ errString, file, line);
 		case SQLITE_NOTICE_RECOVER_WAL: 
-			throw new Sqlite_Notice_Recover_Wal(msg, file, line);
+			throw new Sqlite_Notice_Recover_Wal(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_NOTICE_RECOVER_ROLLBACK:
-			throw new Sqlite_Notice_Recover_Rollback(msg, file, line);
+			throw new Sqlite_Notice_Recover_Rollback(msg ~ ":" ~ errString,
+			 file, line);
 		case SQLITE_WARNING_AUTOINDEX: 
-			throw new Sqlite_Warning_Autoindex(msg, file, line);
-		default: throw new Exception(to!string(errCode) ~ " " ~msg, file, line);
+			throw new Sqlite_Warning_Autoindex(msg ~ ":" ~ errString,
+			 file, line);
+		default: throw new Exception(to!string(errCode) ~ " " ~ msg ~ ":" 
+			~ errString, file, line);
 	}
 }

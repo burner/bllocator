@@ -24,7 +24,7 @@ struct Sqlite {
 		);
 
 		if(errCode != SQLITE_OK) {
-			sqliteThrowException(errCode);
+			sqliteThrowException(this.db, errCode);
 		}
 	}
 
@@ -74,17 +74,22 @@ struct Sqlite {
 		mixin(genRangeItemFill!T());
 	}
 
-	void insertImpl(Args...)(sqlite3* db, sqlite3_stmt* stmt, 
-			auto ref Args args) 
-	{
+	void insert(T)(ref T arg) {
 		enum insertString = genInsert1!(T,sqliteType);
 		static assert(insertString[$-1] == '\0');
 		int errCode = sqlite3_prepare_v2(db, insertStr.ptr,
 				createString.length, &stmt, null);
+
+		this.insertImpl(this.stmt, arg);
+	}
+
+	void insertImpl(Args...)(sqlite3_stmt* stmt, 
+			auto ref Args args) 
+	{
 		
 		if(errCode != SQLITE_OK) {
 			scope(exit) sqlite3_finalize(stmt);
-			sqliteThrowException(errCode);
+			sqliteThrowException(this.db, errCode);
 		}
 	}
 
@@ -100,13 +105,13 @@ struct Sqlite {
 		
 		if(errCode != SQLITE_OK) {
 			scope(exit) sqlite3_finalize(stmt);
-			sqliteThrowException(errCode);
+			sqliteThrowException(this.db, errCode);
 		}
 
 		errCode = sqlite3_step(stmt);
 		if(errCode != SQLITE_DONE) {
 			scope(exit) sqlite3_finalize(stmt);
-			sqliteThrowException(errCode);
+			sqliteThrowException(this.db, errCode);
 		}
 	}
 	
@@ -167,6 +172,7 @@ version(unittest) {
 }
 
 unittest {
+	import std.file : exists, remove;
 	string dbname = "__testdatabase.db";
 	scope(exit) {
 		if(exists(dbname)) {
