@@ -291,3 +291,20 @@ unittest {
 
 	assert(i == 10, to!string(i));
 }
+
+version(unittest)
+Vector!int someFuncRetVector() {
+	auto v = Vector!int();
+	foreach(i; 0 .. 10) {
+		v.insertBack(i);
+	}
+
+	return v;
+}
+
+unittest {
+	auto v = someFuncRetVector();
+	foreach(i; 0 .. 10) {
+		assert(v[i] == i);
+	}
+}
