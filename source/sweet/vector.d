@@ -1,5 +1,7 @@
 module sweet.vector;
 
+import core.sync.mutex;
+
 import sweet.typedallocator;
 
 struct Vector(T,A = TypedAllo!(shared Mallocator)) {

@@ -116,7 +116,6 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 	import sweet.vector : Vector;
 
-	//alias HMArray = Array!(HMEntry!(K,V)*);
 	alias HMArray = Vector!(HMEntry!(K,V)*, A);
 
 	struct HashMapImpl {
@@ -213,8 +212,6 @@ struct HashMap(K,V,A = TypedAllo!(shared Mallocator)) {
 
 		auto entry = arr[hash];
 		if(entry is null) {
-			//arr[hash] = entry = cast(HMEntry!(K,V)*)
-			//	GC.malloc(HMEntry!(K,V)().sizeof);
 			arr[hash] = entry = a.make!(HMEntry!(K,V))();
 			entry.emplace();
 		}
