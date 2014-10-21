@@ -12,8 +12,8 @@
 	"configurations": [
 	{
 		"name": "library",
-		"targetType": "library",
-	},
+		"targetType": "library"
+	}
 	],
 
 	"lflags" : ["-lmysqlclient", "-lsqlite3", "-lpthread", "-lz", "-lm", "-lssl", "-lcrypto", "-ldl"]
