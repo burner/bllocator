@@ -6,7 +6,7 @@
 		"Andrei Alexandrescu",
 		"Robert 'BuRnEr' Schadek"
 	],
-	"buildOptions" : ["unittests", "coverage"],
+	"buildOptions" : ["unittests"],
 	"dependencies": {
 	},
 	"configurations": [

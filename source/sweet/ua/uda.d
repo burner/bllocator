@@ -52,6 +52,13 @@ enum {
 	NoUA
 }
 
+enum Relation {
+	OneToOne,
+	OneToMany,
+	ManyToOne,
+	ManyToMany
+}
+
 version(unittest) {
 	@UA("AName") struct SomeCrazyNameYouShouldNeverWrite {
 		@UA int a;

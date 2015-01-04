@@ -4,6 +4,7 @@ import std.array : empty, front, back;
 import std.algorithm : min;
 import core.sync.mutex;
 import core.thread;
+import core.memory;
 
 import std.stdio : writefln;
 
@@ -17,10 +18,11 @@ synchronized class Trie(K,V) {
 		this.lock = cast(shared(Mutex))new Mutex();
 	}
 
-	void insert(K[] keys, V value) {
+	bool insert(K[] keys, V value) {
 		shared Trie!(K,V) next;
 		synchronized(lock) {
 			if(keys.empty && this.isSet) {
+				return false;
 			} else if(!keys.empty) {
 				auto tmp = keys[0] in this.follow;
 				if(tmp is null) {
@@ -32,16 +34,17 @@ synchronized class Trie(K,V) {
 			} else {
 				this.value = value;
 				this.isSet = true;
-				return;
+				return true;
 			}
 		}
 
-		next.insert(keys[1 .. $], value);
+		return next.insert(keys[1 .. $], value);
 	}
 
 	ref shared(V) opIndex(K[] keys) {
 		shared(V)* value;
-		bool exists = this.hasValueImpl(keys, &value);
+		shared(Trie!(K,V))* map;
+		bool exists = this.hasValueImpl(keys, &value, &map);
 		if(!exists) {
 			throw new Exception("Values does not exists");
 		} else {
@@ -49,16 +52,45 @@ synchronized class Trie(K,V) {
 		}
 	}
 
-	bool hasValue(K[] keys) {
+	bool remove(K[] keys) {
 		shared(V)* value;
-		return this.hasValueImpl(keys, &value);
+		shared(Trie!(K,V))* map;
+		bool exists = this.hasValueImpl(keys, &value, &map);
+
+		if(exists) {
+			assert(map !is null);
+			shared(Trie!(K,V)) mapR = *map;
+			assert(mapR !is null);
+			mapR.remove();
+		}
+
+		return exists;
 	}
 
-	bool hasValueImpl(K[] keys, shared(V)** value) {
+	private void remove() {
+		synchronized(lock) {
+			this.isSet = false;
+			static if(is(V : Object)) {
+				static if(hasEleboratedDestructor!V) {
+					destory(this.value);
+					GC.free(this.value);
+				}
+			}
+		}
+	}
+
+	bool hasValue(K[] keys) {
+		shared(V)* value;
+		shared(Trie!(K,V))* map;
+		return this.hasValueImpl(keys, &value, &map);
+	}
+
+	bool hasValueImpl(K[] keys, shared(V)** value, shared(Trie!(K,V))** map) {
 		shared Trie!(K,V) next;
 		synchronized(lock) {
-			if(keys.empty) {
+			if(keys.empty && this.isSet) {
 				*value = &this.value;
+				*map = &this;
 				return true;
 			} else {
 				auto tmp = keys.front in this.follow;
@@ -72,7 +104,7 @@ synchronized class Trie(K,V) {
 		if(next is null) {
 			return false;
 		} else {
-			return next.hasValueImpl(keys[1 .. $], value);	
+			return next.hasValueImpl(keys[1 .. $], value, map);	
 		}
 	}
 }
@@ -99,6 +131,10 @@ class TrieThread : Thread {
 		this.trie = trie;
 	}
 
+	void foo() {
+		run();
+	}
+
 	void run() {
 		size_t l = this.str.length / this.n;
 		size_t s = 5;
@@ -107,7 +143,8 @@ class TrieThread : Thread {
 		immutable to = min(l + from - 4, this.str.length);
 		for(; from < to; ++from) {
 			for(size_t j = 1; j < s; ++j) {
-				this.trie.insert(str[from .. from+j], this.i);
+				assert(!this.trie.hasValue(str[from .. from+j]));
+				assert(this.trie.insert(str[from .. from+j], this.i));
 			}
 		}
 	}
@@ -353,12 +390,14 @@ unittest {
 
 	auto trie = new shared Trie!(string,size_t)();
 
-	size_t n = 8;
+	size_t n = 4;
 	Thread[] t;
 	for(size_t i = 0; i < n; ++i) {
 		t ~= new TrieThread(words,i,n,trie);
 		t.back.start();
 	}
+
+	//(cast(TrieThread)t[0]).run();
 
 	foreach(it; t) it.join();
 
@@ -370,9 +409,13 @@ unittest {
 		immutable to = min(l + from - 4, words.length);
 		for(; from < to; ++from) {
 			for(size_t j = 1; j < s; ++j) {
-				writefln("%d %s", trie[words[from .. from+j]], 
-					words[from ..  from+j]);
+				//writefln("%d %s", trie[words[from .. from+j]], 
+					//words[from ..  from+j]);
+				assert(trie.hasValue(words[from .. from+j]));
 				assert(trie[words[from .. from+j]] == i);
+				assert(trie.hasValue(words[from .. from+j]));
+				//assert(trie.remove(words[from .. from+j]));
+				//assert(!trie.hasValue(words[from .. from+j]));
 			}
 		}
 	}
