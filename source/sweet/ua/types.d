@@ -53,7 +53,8 @@ string mysqlType(T)() pure @safe {
 		&& T.length < 255) return format("CHAR(%u)", T.length);
 	else static if(is(T == Date)) return "DATE";
 	else static if(is(T == DateTime)) return "DATETIME";
-	else assert(false, "MYSQL has not type for \"" ~ getNameOf!T() ~ '"');
+	//else assert(false, "MYSQL has not type for \"" ~ getNameOf!T() ~ '"');
+	else return "";
 }
 
 unittest {
@@ -87,5 +88,6 @@ string sqliteType(T)() pure @safe {
 		&& T.length < 255) return format("TEXT", T.length);
 	else static if(is(T == Date)) return "NUMERIC";
 	else static if(is(T == DateTime)) return "NUMERIC";
-	else assert(false, "sqlite has not type for \"" ~ getNameOf!T() ~ '"');
+	//else assert(false, "sqlite has not type for \"" ~ getNameOf!T() ~ '"');
+	else return "";
 }

@@ -19,6 +19,11 @@ private pure void buildUARecursive(Args...)(ref UA ua, Args args) {
 				ua.isPrimaryKey = true;
 			} else if(args[0] == NotNull) {
 				ua.isNotNull = true;
+			} else if(args[0] == ForeignKey 
+					|| args[0] == OneToMany
+					|| args[0] == ManyToOne
+					|| args[0] == ManyToMany) {
+				ua.relation = uaToUARelation(args[0]);
 			} else {
 				assert(false, "Unexpected value \"" ~ to!string(args[0]) ~ '"');
 			}
@@ -44,6 +49,9 @@ struct UA {
 	string rename;
 	bool isPrimaryKey;
 	bool isNotNull;
+
+	UARelation relation;
+	string relationTable;
 }
 
 /** Whatever has an NoUA attribute will not be considered in UniformAccess
@@ -52,11 +60,32 @@ enum {
 	NoUA
 }
 
-enum Relation {
-	OneToOne,
+enum UARelation {
+	None,
+	ForeignKey,
 	OneToMany,
 	ManyToOne,
 	ManyToMany
+}
+
+UARelation uaToUARelation(T)(T v) {
+	if(v == ForeignKey) {
+		return UARelation.ForeignKey;
+	} else if(v == OneToMany) {
+		return UARelation.OneToMany;
+	} else if(v == ManyToOne) {
+		return UARelation.ManyToOne;
+	} else if(v == ManyToMany) {
+		return UARelation.ManyToMany;
+	}
+	assert(false);
+}
+
+unittest {
+	static assert(uaToUARelation(ForeignKey) == UARelation.ForeignKey);
+	static assert(uaToUARelation(OneToMany) == UARelation.OneToMany);
+	static assert(uaToUARelation(ManyToOne) == UARelation.ManyToOne);
+	static assert(uaToUARelation(ManyToMany) == UARelation.ManyToMany);
 }
 
 version(unittest) {
@@ -69,6 +98,8 @@ version(unittest) {
 		@UA(PrimaryKey) @property void fun(int f) { fun_ = f; }
 
 		private int fun_;
+
+		@UA(ForeignKey) SomeCrazyNameYouShouldNeverWrite1 other;
 	}
 
 	@UA struct SomeCrazyNameYouShouldNeverWrite1 {
@@ -99,6 +130,7 @@ pure UA getUA(T)() {
 			ret.rename = it.rename;
 			ret.isPrimaryKey = it.isPrimaryKey;
 			ret.isNotNull = it.isNotNull;
+			ret.relation = it.relation;
 			break;
 		}
 	}
@@ -111,8 +143,11 @@ pure UA getUA(T)() {
 }
 
 unittest {
-	UA u = getUA!SomeCrazyNameYouShouldNeverWrite();
-	assert(u.rename == "AName");
+	enum u = getUA!SomeCrazyNameYouShouldNeverWrite();
+	static assert(u.rename == "AName");
+	enum u2 = getUA!(SomeCrazyNameYouShouldNeverWrite,"other")();
+	static assert(u2.relation == UARelation.ForeignKey, to!string(u2.relation));
+
 }
 
 UA getUA(T, string member)() {
@@ -125,6 +160,7 @@ UA getUA(T, string member)() {
 			ret.rename = it.rename;
 			ret.isPrimaryKey = it.isPrimaryKey;
 			ret.isNotNull = it.isNotNull;
+			ret.relation = it.relation;
 			break;
 		}
 	}
